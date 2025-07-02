@@ -1,24 +1,15 @@
 import React from "react";
 
-const Button = ({ type, onClick }) => {
-  const baseClasses =
-    "px-4 py-2 text-gray-700 bg-white rounded shadow transition-colors duration-200";
-  const hoverClasses = {
-    add: "hover:bg-green-500 hover:text-white",
-    delete: "hover:bg-red-500 hover:text-white",
-  };
-
+function Button({ type, onClick, className, children }) {
   return (
-    <div className="flex justify-center items-center mt-4">
-      <button
-        className={`${baseClasses} ${hoverClasses[type] || hoverClasses.add}`}
-        onClick={onClick}
-        type="button"
-      >
-        {type === "delete" ? "Delete Button" : "Add Button"}
-      </button>
-    </div>
+    <button
+      type={type}
+      onClick={onClick}
+      className={`px-4 py-2 text-white rounded-md transition-all duration-150 ${className}`}
+    >
+      {children}
+    </button>
   );
-};
+}
 
 export default Button;
