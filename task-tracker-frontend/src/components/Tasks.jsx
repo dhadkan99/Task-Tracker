@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
 import Tasklist from "../components/Tasklist";
 import Button from "../components/Button";
-
+import { fetchTasks } from "../api/task";
 const getInitialTasks = () => {
   const storedTasks = localStorage.getItem("tasks");
   return storedTasks ? JSON.parse(storedTasks) : [];
@@ -11,17 +11,31 @@ const getInitialTasks = () => {
 function Tasks() {
   const [tasks, setTask] = useState(getInitialTasks);
   const [newtask, setNewTask] = useState("");
-
+  const [welcomeMessage, setWelcomeMessage] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  //iinitialize  and featch task form the backend
   useEffect(() => {
-    // setWelcomeMessage("Welcome to Task tracker");
-    // const timer = setTimeout(() => setWelcomeMessage(""), 3000);
-    // return () => clearTimeout(timer);
+    const initializeApp = async () => {
+      try {
+        const data = await fetchTasks();
+        setTask(data);
+        setWelcomeMessage("Welcome to Task tracker");
+        const timer = setTimeout(() => setWelcomeMessage(""), 3000);
+        return () => clearTimeout(timer);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+    initializeApp();
   }, []);
 
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
-
+  //add tasks
   const addTask = () => {
     if (newtask.trim()) {
       setTask([
@@ -38,7 +52,7 @@ function Tasks() {
       toast.error("Task can't be empty");
     }
   };
-
+  //delete task
   const deleteTask = (id) => {
     const task = tasks.find((task) => task.id === id);
     if (task && task.completed) {
@@ -56,10 +70,31 @@ function Tasks() {
       )
     );
   };
+  //loading
+  if (loading) {
+    return (
+      <div className="p-6 mx-auto mt-8 w-full max-w-7xl bg-white rounded-xl shadow">
+        <p className="text-lg text-gray-600">Loading...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 mx-auto mt-8 w-full max-w-7xl bg-white rounded-xl shadow">
+        <p className="text-lg text-red-600">Error</p>
+      </div>
+    );
+  }
 
   return (
-    <div className="mt-8 bg-white rounded-xl shadow p-6 w-full max-w-7xl mx-auto">
-      <h2 className="text-xl font-bold text-gray-800 mb-2">Hello</h2>
+    <div className="p-6 mx-auto mt-8 w-full max-w-7xl bg-white rounded-xl shadow">
+      <h2 className="mb-2 text-xl font-bold text-gray-800">Hello</h2>
+      {welcomeMessage && (
+        <p className="mb-4 text-sm text-green-600">{welcomeMessage}</p>
+      )}
+      {/* error  */}
+
       <div className="flex gap-2 items-center mb-6">
         <input
           type="text"
@@ -70,12 +105,11 @@ function Tasks() {
         />
         <Button
           onClick={addTask}
-          className="bg-purple-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-purple-700"
+          className="px-4 py-2 font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700"
         >
           + New Task
         </Button>
       </div>
-
       <Tasklist
         tasks={tasks}
         onDelete={deleteTask}
