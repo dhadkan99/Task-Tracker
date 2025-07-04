@@ -1,16 +1,16 @@
 import React from "react";
 
-export default function UpcomingTasks({ tasks }) {
+function UpcomingTasks({ Tasks }) {
   return (
-    <div className="bg-white rounded-xl shadow p-6 w-full max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="text-xl font-bold text-purple-700 flex items-center gap-2">
+    <div className="p-6 mx-auto w-full max-w-7xl bg-white rounded-xl shadow">
+      <div className="flex justify-between items-center mb-2">
+        <h2 className="flex gap-2 items-center text-xl font-bold text-purple-700">
           Upcoming Tasks
         </h2>
       </div>
-      <p className="text-gray-500 text-sm">
-        {tasks.length} active tasks, 0 completed
-      </p>
+      <p className="text-sm text-gray-500">active tasks, 0 completed</p>
+      {Tasks}
     </div>
   );
 }
+export default UpcomingTasks;
