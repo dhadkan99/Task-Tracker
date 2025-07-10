@@ -3,7 +3,7 @@ export const fetchTasks = async () => {
 const response = await fetch(API_URL);
 return await response.json();
 };
-
+//add tasks
 export const addTask = async (text) => {
 const response = await fetch(API_URL, {
 method: 'POST',
@@ -12,7 +12,7 @@ body: JSON.stringify({ text })
 });
 return await response.json();
 };
-
+//delete tasks
 export const deleteTask = async (id) => {
 const response = await fetch(`${API_URL}/${id}`, {
 method: 'DELETE'
