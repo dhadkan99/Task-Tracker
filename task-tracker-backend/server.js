@@ -7,7 +7,8 @@ const mongoose = require("mongoose");
 
 // Import models
 const User = require("./models/User");
-const Task = require("./models/Tasks");
+console.log("User model:", User);
+const Task = require("./models/Task");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -120,22 +121,6 @@ app.put("/api/tasks/:id", authenticateJWT, async (req, res) => {
   }
 });
 
-// Add DELETE route for deleting a task by id
-app.delete("/api/tasks/:id", authenticateJWT, async (req, res) => {
-  try {
-    const task = await Task.findOneAndDelete({
-      id: req.params.id,
-      user: req.user.id,
-    });
-    if (!task) {
-      return res.status(404).json({ message: "Task not found" });
-    }
-    res.json({ message: "Task deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ message: "Error deleting task" });
-  }
-});
-
 // Debug/admin route to show all tasks in the database
 app.get("/api/all-tasks", async (req, res) => {
   try {
@@ -190,6 +175,7 @@ app.post("/api/auth/login", async (req, res) => {
 
     res.json({ token, message: "Login successful" });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Error during login" });
   }
 });
