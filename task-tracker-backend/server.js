@@ -1,124 +1,160 @@
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const mongoose = require("mongoose");
+
+// Import models
+const User = require("./models/User");
+const Task = require("./models/Tasks");
+
 const app = express();
-app.use(cors());
-app.use(express.json());
-const PORT = 5000;
+const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET || "mysecretkey123";
 
+// MongoDB Connection
+mongoose
+  .connect(process.env.MONGO_URI || "mongodb://localhost:27017/tasktracker", {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("MongoDB Connected"))
+  .catch((err) => console.error("MongoDB Connection Error:", err));
+
+// Middleware
 app.use(cors());
 app.use(express.json());
-//task array
-let tasks = [
-  { id: 1, text: "Task 1", completed: false },
-  { id: 2, text: "Task 2", completed: false },
-  { id: 3, text: "Task 3", completed: false },
-];
-//api call 
-app.get("/", (req, res) => {
-  res.send("Task Tracker API");
-});
-//health check path to check if the server is running
+
+// JWT Authentication Middleware
+const authenticateJWT = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ message: "Please log in" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const user = jwt.verify(token, JWT_SECRET);
+    req.user = user;
+    next();
+  } catch (error) {
+    return res.status(403).json({ message: "Invalid or expired token" });
+  }
+};
+
+// Routes
 app.get("/health", (req, res) => {
-  res.send("Hello Word");
+  res.send("Backend is up and running!");
 });
 
-<<<<<<< Updated upstream
-//get all tasks
-app.get("/api/tasks", (req, res) => {
-  res.json(tasks);
-});
-
-=======
 // Task Routes
 app.get("/api/tasks", authenticateJWT, async (req, res) => {
   try {
-    console.log("[GET /api/tasks] user id:", req.user.id);
     const tasks = await Task.find({ user: req.user.id });
-    console.log("[GET /api/tasks] tasks:", tasks);
-    res.json(tasks);
+    res.json(
+      tasks.map((task) => ({
+        id: task.id,
+        task: task.text,
+        dueDate: task.date,
+        completed: task.completed,
+      }))
+    );
   } catch (err) {
     res.status(500).json({ message: "Error fetching tasks" });
   }
 });
-//task creation
+
 app.post("/api/tasks", authenticateJWT, async (req, res) => {
   try {
-    console.log(
-      "[POST /api/tasks] user id:",
-      req.user.id,
-      "text:",
-      req.body.text
-    );
+    const taskText = req.body.task;
+    const dueDate = req.body.dueDate || req.body.date;
+    if (!taskText) {
+      return res.status(400).json({ message: "Task is required" });
+    }
     const newTask = new Task({
-      title: req.body.text,
+      text: taskText,
       user: req.user.id,
+      date: dueDate || Date.now(),
+      completed: false,
     });
     await newTask.save();
-    console.log("[POST /api/tasks] created task:", newTask);
-    res.status(201).json(newTask);
+    res.status(201).json({
+      id: newTask.id,
+      task: newTask.text,
+      dueDate: newTask.date,
+      completed: newTask.completed,
+    });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: "Error creating task" });
   }
 });
 
-// Delete task
-app.delete("/api/tasks/:id", authenticateJWT, async (req, res) => {
+app.put("/api/tasks/:id", authenticateJWT, async (req, res) => {
   try {
-    const task = await Task.findOneAndDelete({
-      _id: req.params.id,
-      user: req.user.id,
-    });
-
+    const updateFields = {};
+    if (typeof req.body.completed !== "undefined")
+      updateFields.completed = req.body.completed;
+    if (typeof req.body.task !== "undefined") updateFields.text = req.body.task;
+    if (typeof req.body.dueDate !== "undefined")
+      updateFields.date = req.body.dueDate;
+    const task = await Task.findOneAndUpdate(
+      { id: req.params.id, user: req.user.id },
+      updateFields,
+      { new: true }
+    );
     if (!task) {
       return res.status(404).json({ message: "Task not found" });
     }
+    res.json({
+      id: task.id,
+      task: task.text,
+      dueDate: task.date,
+      completed: task.completed,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error updating task" });
+  }
+});
 
+// Add DELETE route for deleting a task by id
+app.delete("/api/tasks/:id", authenticateJWT, async (req, res) => {
+  try {
+    const task = await Task.findOneAndDelete({
+      id: req.params.id,
+      user: req.user.id,
+    });
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
     res.json({ message: "Task deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: "Error deleting task" });
   }
 });
 
-// Update task
-app.put("/api/tasks/:id", authenticateJWT, async (req, res) => {
+// Debug/admin route to show all tasks in the database
+app.get("/api/all-tasks", async (req, res) => {
   try {
-    const updateFields = {};
-    if (typeof req.body.completed !== "undefined")
-      updateFields.completed = req.body.completed;
-    if (typeof req.body.title !== "undefined")
-      updateFields.title = req.body.title;
-
-    const task = await Task.findOneAndUpdate(
-      { _id: req.params.id, user: req.user.id },
-      updateFields,
-      { new: true }
-    );
-
-    if (!task) {
-      return res.status(404).json({ message: "Task not found" });
-    }
-
-    res.json(task);
+    const allTasks = await Task.find({});
+    res.json(allTasks);
   } catch (err) {
-    res.status(500).json({ message: "Error updating task" });
+    res.status(500).json({ message: "Error fetching all tasks" });
   }
 });
 
 // Auth Routes
 app.post("/api/auth/register", async (req, res) => {
   try {
-    const { username, email, password } = req.body;
+    const { email, password, username } = req.body;
 
-    if (!username || !email || !password) {
+    if (!email || !password || !username) {
       return res
         .status(400)
-        .json({ message: "Username, email and password are required" });
-    }
-
-    if (!email || !password) {
-      return res
-        .status(400)
-        .json({ message: "Email and password are required" });
+        .json({ message: "Email, username, and password are required" });
     }
 
     const existingUser = await User.findOne({ email });
@@ -127,21 +163,13 @@ app.post("/api/auth/register", async (req, res) => {
     }
 
     const newUser = new User({
-      username,
       email,
       password: bcrypt.hashSync(password, 10),
+      username,
     });
 
     await newUser.save();
-    // Generate JWT token after registration
-    const token = jwt.sign(
-      { id: newUser._id, role: newUser.role },
-      JWT_SECRET,
-      {
-        expiresIn: "15m",
-      }
-    );
-    res.status(201).json({ message: "User registered successfully", token });
+    res.status(201).json({ message: "User registered successfully" });
   } catch (err) {
     res.status(500).json({ message: "Error registering user" });
   }
@@ -157,7 +185,7 @@ app.post("/api/auth/login", async (req, res) => {
     }
 
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
-      expiresIn: "55m",
+      expiresIn: "15m",
     });
 
     res.json({ token, message: "Login successful" });
@@ -166,30 +194,6 @@ app.post("/api/auth/login", async (req, res) => {
   }
 });
 
-app.get(
-  "/api/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
-);
-
-app.get(
-  "/api/auth/google/callback",
-  passport.authenticate("google", { session: false }),
-  async (req, res) => {
-    try {
-      const token = jwt.sign(
-        { id: req.user._id, role: req.user.role },
-        JWT_SECRET,
-        {
-          expiresIn: "15m",
-        }
-      );
-      res.redirect(`http://localhost:3000/?token=${token}`);
-    } catch (err) {
-      res.redirect(`http://localhost:3000/login?error=authentication_failed`);
-    }
-  }
-);
-
 app.post("/api/auth/logout", (req, res) => {
   res.json({
     message: "Logout successful. Please clear the token on the client side.",
@@ -197,7 +201,6 @@ app.post("/api/auth/logout", (req, res) => {
 });
 
 // Start Server
->>>>>>> Stashed changes
 app.listen(PORT, () => {
-  console.log(`Server is running on port http://localhost:${PORT}`);
+  console.log(`Server is running on http://localhost:${PORT}`);
 });
