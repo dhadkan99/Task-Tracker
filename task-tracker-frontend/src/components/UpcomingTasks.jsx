@@ -8,7 +8,7 @@ function UpcomingTasks({ Tasks }) {
           Upcoming Tasks
         </h2>
       </div>
-      <p className="text-sm text-gray-500">active tasks, 0 completed</p>
+      <p className="text-sm text-gray-400">active tasks, 0 completed</p>
       {Tasks}
     </div>
   );
