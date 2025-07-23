@@ -21,7 +21,11 @@ function Tasks() {
     const initializeApp = async () => {
       try {
         const data = await fetchTasks();
-        setTask(data);
+        if (Array.isArray(data)) {
+          setTask(data);
+        } else {
+          setError("Failed to load tasks: invalid response");
+        }
         setWelcomeMessage("Welcome to Task tracker");
         const timer = setTimeout(() => setWelcomeMessage(""), 3000);
         return () => clearTimeout(timer);
@@ -51,10 +55,10 @@ function Tasks() {
   };
   //delete task
   const handleDeleteTask = async (id) => {
-    const task = tasks.find((task) => task._id === id);
+    const task = tasks.find((task) => task.id === id);
     if (task && task.completed) {
       await deleteTask(id);
-      setTask(tasks.filter((task) => task._id !== id));
+      setTask(tasks.filter((task) => task.id !== id));
       toast.success("Task deleted");
     } else {
       toast.error("Only completed tasks can be deleted");
@@ -62,10 +66,10 @@ function Tasks() {
   };
 
   const onToggleComplete = async (id) => {
-    const task = tasks.find((t) => t._id === id);
+    const task = tasks.find((t) => t.id === id);
     if (!task) return;
     const updated = await updateTask(id, { completed: !task.completed });
-    setTask(tasks.map((t) => (t._id === id ? updated : t)));
+    setTask(tasks.map((t) => (t.id === id ? updated : t)));
   };
 
   const onUpdateTask = (id, task, dueDate) => {
@@ -79,7 +83,7 @@ function Tasks() {
       task: editTask,
       dueDate: editDueDate,
     });
-    setTask(tasks.map((t) => (t._id === editId ? updated : t)));
+    setTask(tasks.map((t) => (t.id === editId ? updated : t)));
     setEditId(null);
     setEditTask("");
     setEditDueDate("");
@@ -98,7 +102,7 @@ function Tasks() {
   if (error) {
     return (
       <div className="p-6 mx-auto mt-8 w-full max-w-7xl bg-white rounded-xl shadow">
-        <p className="text-lg text-red-600">Error</p>
+        <p className="text-lg text-red-600">{error}</p>
       </div>
     );
   }

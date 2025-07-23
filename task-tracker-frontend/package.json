@@ -8,6 +8,7 @@
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^13.5.0",
     "autoprefixer": "^10.4.21",
+    "cally": "^0.8.0",
     "framer-motion": "^12.23.0",
     "postcss": "^8.5.6",
     "react": "^19.1.0",
