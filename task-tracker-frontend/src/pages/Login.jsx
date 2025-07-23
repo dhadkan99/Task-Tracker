@@ -27,6 +27,7 @@ function Login() {
     setErrorMsg("");
 
     if (!isRegister) {
+      // Login logic
       if (email && password) {
         try {
           const response = await fetch("http://localhost:5000/api/auth/login", {
@@ -35,6 +36,7 @@ function Login() {
             body: JSON.stringify({ email, password }),
           });
           const data = await response.json();
+
           if (response.ok && data.token) {
             localStorage.setItem("token", data.token);
             navigate("/dashboard");
@@ -50,6 +52,7 @@ function Login() {
         }, 100);
       }
     } else {
+      // Register logic
       if (username && email && password) {
         try {
           const response = await fetch(
@@ -61,6 +64,7 @@ function Login() {
             }
           );
           const data = await response.json();
+
           if (response.ok && data.token) {
             localStorage.setItem("token", data.token);
             navigate("/dashboard");
@@ -155,15 +159,20 @@ function Login() {
 
           {/* OR Separator */}
           <div className="flex items-center my-4">
-            <hr className="flex-grow border-gray-300 border-[1px] border-solid" />
+            <hr className="flex-grow border-gray-300 border-solid border-[1px]" />
             <span className="mx-2 text-gray-500">OR</span>
-            <hr className="flex-grow border-gray-300 border-[1px] border-solid" />
+            <hr className="flex-grow border-gray-300 border-solid border-[1px]" />
           </div>
 
           {/* Google Sign-In Button */}
-          {/* <div className="flex justify-center">
-            <GoogleLogin onSuccess={handleGoogleSuccess} onError={handleGoogleFailure} />
-          </div> */}
+          {/* 
+          <div className="flex justify-center">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleFailure}
+            />
+          </div> 
+          */}
 
           <p className="mt-4 text-sm text-center text-gray-600">
             {isRegister ? (
