@@ -2,8 +2,6 @@ require("dotenv").config();
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-const passport = require("passport");
-const GoogleStrategy = require("passport-google-oauth20").Strategy;
 const mongoose = require("mongoose");
 const passport = require("passport");
 const GoogleStrategy = require("passport-google-oauth20").Strategy;
@@ -11,7 +9,8 @@ const express = require("express");
 
 // Import models
 const User = require("./models/User");
-const Task = require("./models/Tasks");
+console.log("User model:", User);
+const Task = require("./models/Task");
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -29,7 +28,6 @@ mongoose
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(passport.initialize());
 
 // JWT Authentication Middleware
 const authenticateJWT = (req, res, next) => {
@@ -77,6 +75,7 @@ app.get(
   "/api/auth/google",
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
+
 
 
 // Configure Google Strategy
@@ -152,6 +151,7 @@ passport.use(
       return done(null, user);
     }
   
+
 // Routes
 app.get("/health", (req, res) => {
   res.send("Backend is up and running!");
@@ -161,7 +161,14 @@ app.get("/health", (req, res) => {
 app.get("/api/tasks", authenticateJWT, async (req, res) => {
   try {
     const tasks = await Task.find({ user: req.user.id });
-    res.json(tasks);
+    res.json(
+      tasks.map((task) => ({
+        id: task.id,
+        task: task.text,
+        dueDate: task.date,
+        completed: task.completed,
+      }))
+    );
   } catch (err) {
     res.status(500).json({ message: "Error fetching tasks" });
   }
@@ -169,26 +176,76 @@ app.get("/api/tasks", authenticateJWT, async (req, res) => {
 
 app.post("/api/tasks", authenticateJWT, async (req, res) => {
   try {
+    const taskText = req.body.task;
+    const dueDate = req.body.dueDate || req.body.date;
+    if (!taskText) {
+      return res.status(400).json({ message: "Task is required" });
+    }
     const newTask = new Task({
-      text: req.body.text,
+      text: taskText,
       user: req.user.id,
+      date: dueDate || Date.now(),
+      completed: false,
     });
     await newTask.save();
-    res.status(201).json(newTask);
+    res.status(201).json({
+      id: newTask.id,
+      task: newTask.text,
+      dueDate: newTask.date,
+      completed: newTask.completed,
+    });
   } catch (err) {
+    console.log(err);
     res.status(500).json({ message: "Error creating task" });
+  }
+});
+
+app.put("/api/tasks/:id", authenticateJWT, async (req, res) => {
+  try {
+    const updateFields = {};
+    if (typeof req.body.completed !== "undefined")
+      updateFields.completed = req.body.completed;
+    if (typeof req.body.task !== "undefined") updateFields.text = req.body.task;
+    if (typeof req.body.dueDate !== "undefined")
+      updateFields.date = req.body.dueDate;
+    const task = await Task.findOneAndUpdate(
+      { id: req.params.id, user: req.user.id },
+      updateFields,
+      { new: true }
+    );
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    res.json({
+      id: task.id,
+      task: task.text,
+      dueDate: task.date,
+      completed: task.completed,
+    });
+  } catch (err) {
+    res.status(500).json({ message: "Error updating task" });
+  }
+});
+
+// Debug/admin route to show all tasks in the database
+app.get("/api/all-tasks", async (req, res) => {
+  try {
+    const allTasks = await Task.find({});
+    res.json(allTasks);
+  } catch (err) {
+    res.status(500).json({ message: "Error fetching all tasks" });
   }
 });
 
 // Auth Routes
 app.post("/api/auth/register", async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, password, username } = req.body;
 
-    if (!email || !password) {
+    if (!email || !password || !username) {
       return res
         .status(400)
-        .json({ message: "Email and password are required" });
+        .json({ message: "Email, username, and password are required" });
     }
 
     const existingUser = await User.findOne({ email });
@@ -199,6 +256,7 @@ app.post("/api/auth/register", async (req, res) => {
     const newUser = new User({
       email,
       password: bcrypt.hashSync(password, 10),
+      username,
     });
 
     await newUser.save();
@@ -223,33 +281,10 @@ app.post("/api/auth/login", async (req, res) => {
 
     res.json({ token, message: "Login successful" });
   } catch (err) {
+    console.error(err);
     res.status(500).json({ message: "Error during login" });
   }
 });
-
-app.get(
-  "/api/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
-);
-
-app.get(
-  "/api/auth/google/callback",
-  passport.authenticate("google", { session: false }),
-  async (req, res) => {
-    try {
-      const token = jwt.sign(
-        { id: req.user._id, role: req.user.role },
-        JWT_SECRET,
-        {
-          expiresIn: "15m",
-        }
-      );
-      res.redirect(`http://localhost:3000/?token=${token}`);
-    } catch (err) {
-      res.redirect(`http://localhost:3000/login?error=authentication_failed`);
-    }
-  }
-);
 
 app.post("/api/auth/logout", (req, res) => {
   res.json({
