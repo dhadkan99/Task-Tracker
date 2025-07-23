@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
-
 import { toast } from "react-toastify";
 import Tasklist from "../components/Tasklist";
 import Button from "../components/Button";
 import { fetchTasks, addTask, updateTask, deleteTask } from "../api/task";
-// import { GoogleOAuthProvider } from "@react-oauth/google";
 
 function Tasks() {
   const [tasks, setTask] = useState([]);
@@ -16,7 +14,7 @@ function Tasks() {
   const [welcomeMessage, setWelcomeMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  //iinitialize  and featch task form the backend
+
   useEffect(() => {
     const initializeApp = async () => {
       try {
@@ -41,7 +39,7 @@ function Tasks() {
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
   }, [tasks]);
-  //add tasks
+
   const handleAddTask = async () => {
     if (newTask.trim()) {
       const created = await addTask(newTask, newDueDate);
@@ -53,16 +51,19 @@ function Tasks() {
       toast.error("Task can't be empty");
     }
   };
-  //delete task
+
   const handleDeleteTask = async (id) => {
-    const task = tasks.find((task) => task.id === id);
-    if (task && task.completed) {
-      await deleteTask(id);
-      setTask(tasks.filter((task) => task.id !== id));
-      toast.success("Task deleted");
-    } else {
-      toast.error("Only completed tasks can be deleted");
+    const taskToDelete = tasks.find((task) => task.id === id);
+    if (!taskToDelete) return;
+
+    if (!taskToDelete.completed) {
+      toast.warn("Only completed tasks can be deleted");
+      return;
     }
+
+    await deleteTask(id);
+    setTask(tasks.filter((task) => task.id !== id));
+    toast.success("Task deleted");
   };
 
   const onToggleComplete = async (id) => {
@@ -90,7 +91,6 @@ function Tasks() {
     toast.success("Task updated");
   };
 
-  //loading
   if (loading) {
     return (
       <div className="p-6 mx-auto mt-8 w-full max-w-7xl bg-white rounded-xl shadow">
@@ -108,13 +108,12 @@ function Tasks() {
   }
 
   return (
-    // <GoogleOAuthProvider clientId="YOUR_CLIENT_ID">
     <div className="p-6 mx-auto mt-8 w-full max-w-7xl bg-white rounded-xl shadow">
       <h2 className="mb-2 text-xl font-bold text-gray-800">Hello</h2>
       {welcomeMessage && (
         <p className="mb-4 text-sm text-green-600">{welcomeMessage}</p>
       )}
-      {/* error  */}
+
       <div className="flex gap-2 items-center mb-6">
         <input
           type="text"
@@ -136,6 +135,7 @@ function Tasks() {
           + New Task
         </Button>
       </div>
+
       {editId && (
         <div className="flex gap-2 items-center mb-4">
           <input
@@ -165,14 +165,14 @@ function Tasks() {
           </Button>
         </div>
       )}
+
       <Tasklist
         tasks={tasks}
         onDelete={handleDeleteTask}
         onToggleComplete={onToggleComplete}
-        onUpdateTask={(id, task, dueDate) => onUpdateTask(id, task, dueDate)}
+        onUpdateTask={onUpdateTask}
       />
     </div>
-    // </GoogleOAuthProvider>
   );
 }
 
