@@ -76,8 +76,6 @@ app.get(
   passport.authenticate("google", { scope: ["profile", "email"] })
 );
 
-
-
 // Configure Google Strategy
 
 // Google callback
@@ -136,21 +134,19 @@ passport.use(
   )
 );
 
-
-    (accessToken, refreshToken, profile, done) => {
-      let user = users.find((u) => u.email === profile.emails[0].value);
-      if (!user) {
-        user = {
-          id: String(users.length + 1),
-          email: profile.emails[0].value,
-          password: bcrypt.hashSync("google-auth", 10),
-          role: "user",
-        };
-        users.push(user);
-      }
-      return done(null, user);
-    }
-  
+(accessToken, refreshToken, profile, done) => {
+  let user = users.find((u) => u.email === profile.emails[0].value);
+  if (!user) {
+    user = {
+      id: String(users.length + 1),
+      email: profile.emails[0].value,
+      password: bcrypt.hashSync("google-auth", 10),
+      role: "user",
+    };
+    users.push(user);
+  }
+  return done(null, user);
+};
 
 // Routes
 app.get("/health", (req, res) => {
