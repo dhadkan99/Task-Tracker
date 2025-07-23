@@ -11,6 +11,7 @@ export const fetchTasks = async () => {
   return await response.json();
 };
 
+
 export const addTask = async (task, dueDate) => {
   const response = await fetch(API_URL, {
     method: "POST",
@@ -27,8 +28,18 @@ export const updateTask = async (id, updates) => {
     body: JSON.stringify(updates),
   });
   return await response.json();
-};
+=======
+//add tasks
+export const addTask = async (text) => {
+const response = await fetch(API_URL, {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ text })
+});
+return await response.json();
 
+};
+//delete tasks
 export const deleteTask = async (id) => {
   const response = await fetch(`${API_URL}/${id}`, {
     method: "DELETE",
