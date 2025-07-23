@@ -12,7 +12,7 @@ function Landingpage() {
 
   return (
     <motion.div
-      className="min-h-screen flex flex-col relative overflow-hidden"
+      className="flex overflow-hidden relative flex-col min-h-screen"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -40 }}
@@ -20,36 +20,36 @@ function Landingpage() {
     >
       {/* Background image with overlay */}
       <div
-        className="absolute inset-0 w-full h-full z-0"
+        className="absolute inset-0 z-0 w-full h-full"
         style={{
           backgroundImage: `url('${bgUrl}')`,
           backgroundSize: "cover",
           backgroundPosition: "center",
         }}
       >
-        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        <div className="absolute inset-0 backdrop-blur-sm bg-black/60" />
       </div>
 
       <Header />
       {/* Hero Section */}
-      <main className="flex-1 flex flex-col justify-center items-center relative z-10 pt-32 pb-12 px-4">
-        <div className="max-w-6xl w-full flex flex-col md:flex-row items-center gap-10 md:gap-16">
+      <main className="flex relative z-10 flex-col flex-1 justify-center items-center px-4 pt-32 pb-12">
+        <div className="flex flex-col gap-10 items-center w-full max-w-6xl md:flex-row md:gap-16">
           <div className="flex-1 text-white">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold mb-4 leading-tight">
+            <h1 className="mb-4 text-4xl font-extrabold leading-tight sm:text-5xl md:text-6xl">
               Master Your{" "}
-              <span className="bg-gradient-to-r from-purple-400 to-purple-600 bg-clip-text text-transparent">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-purple-600">
                 Tasks
               </span>
             </h1>
-            <p className="text-lg md:text-xl text-gray-200 mb-8 max-w-lg">
+            <p className="mb-8 max-w-lg text-lg text-gray-200 md:text-xl">
               Transform your productivity with our intelligent task tracking
               system. Visualize progress, manage deadlines, and achieve your
               goals effortlessly.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 mb-8">
+            <div className="flex flex-col gap-4 mb-8 sm:flex-row">
               <button
-                onClick={() => navigate("/dashboard")}
-                className="px-7 py-3 rounded-lg font-semibold bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white shadow-lg transition-colors"
+                onClick={() => navigate("/login")}
+                className="px-7 py-3 font-semibold text-white bg-gradient-to-r from-purple-500 to-indigo-500 rounded-lg shadow-lg transition-colors hover:from-purple-600 hover:to-indigo-600"
               >
                 Get Started
               </button>
@@ -57,18 +57,18 @@ function Landingpage() {
           </div>
         </div>
         {/* Stats */}
-        <div className="flex flex-col sm:flex-row justify-center items-center gap-8 mt-12 w-full">
+        <div className="flex flex-col gap-8 justify-center items-center mt-12 w-full sm:flex-row">
           <div className="text-center">
             <div className="text-3xl font-bold text-white">10K+</div>
-            <div className="text-gray-300 text-sm mt-1">Tasks Completed</div>
+            <div className="mt-1 text-sm text-gray-300">Tasks Completed</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-white">500+</div>
-            <div className="text-gray-300 text-sm mt-1">Happy Users</div>
+            <div className="mt-1 text-sm text-gray-300">Happy Users</div>
           </div>
           <div className="text-center">
             <div className="text-3xl font-bold text-white">99.9%</div>
-            <div className="text-gray-300 text-sm mt-1">Uptime</div>
+            <div className="mt-1 text-sm text-gray-300">Uptime</div>
           </div>
         </div>
       </main>
