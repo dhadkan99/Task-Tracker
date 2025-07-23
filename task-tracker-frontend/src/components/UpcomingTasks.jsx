@@ -1,5 +1,3 @@
-import React from "react";
-
 function UpcomingTasks({ Tasks }) {
   return (
     <div className="p-6 mx-auto w-full max-w-7xl bg-white rounded-xl shadow">

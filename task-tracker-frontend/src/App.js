@@ -1,25 +1,22 @@
 import "./App.css";
 
 import Landingpage from "./components/Landingpage";
-import Dashboard from "./pages/Dashboard"; 
+import Dashboard from "./pages/Dashboard";
 import { ToastContainer } from "react-toastify";
 import { Routes, Route } from "react-router-dom";
-
+import Login from "./pages/Login";
 
 function App() {
   return (
     <div className="flex flex-col min-h-screen">
-     
-      
-
       <main className="flex-grow">
         <Routes>
           <Route path="/" element={<Landingpage />} />
           <Route path="/dashboard" element={<Dashboard />} />
-         
+          <Route path="/login" element={<Login />} />
         </Routes>
       </main>
-     
+
       <ToastContainer position="top-right" autoClose={2000} />
     </div>
   );

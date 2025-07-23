@@ -8,28 +8,28 @@ function Header() {
   const isDashboard = location.pathname === "/dashboard";
 
   return (
-    <header className="fixed top-0 left-0 w-full z-50 bg-white/30 backdrop-blur-md border-b border-gray-300 shadow-sm">
-      <div className="flex items-center justify-between px-6 py-3">
+    <header className="fixed top-0 left-0 z-50 w-full border-b border-gray-300 border-solid shadow-sm backdrop-blur-md bg-white/30">
+      <div className="flex justify-between items-center px-6 py-3">
         {/* Logo */}
         <div
-          className="flex items-center gap-2 cursor-pointer hover:scale-105 transition-transform"
+          className="flex gap-2 items-center transition-transform cursor-pointer hover:scale-105"
           onClick={() => navigate("/")}
         >
-          <h1 className="text-3xl font-bold text-purple-700 flex items-center gap-2">
+          <h1 className="flex gap-2 items-center text-3xl font-bold text-purple-700">
             Task Tracker
           </h1>
         </div>
 
         {/* Middle nav buttons (only on dashboard) */}
         {isDashboard && (
-          <div className="hidden md:flex gap-6 text-gray-700 font-medium">
-            <button className="hover:text-blue-600 transition-colors">
+          <div className="hidden gap-6 font-medium text-gray-700 md:flex">
+            <button className="transition-colors hover:text-blue-600">
               Features
             </button>
-            <button className="hover:text-blue-600 transition-colors">
+            <button className="transition-colors hover:text-blue-600">
               Pricing
             </button>
-            <button className="hover:text-blue-600 transition-colors">
+            <button className="transition-colors hover:text-blue-600">
               About
             </button>
           </div>
@@ -40,14 +40,14 @@ function Header() {
           {isDashboard ? (
             <button
               onClick={() => navigate("/")}
-              className="text-white px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-colors"
+              className="px-4 py-2 text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg transition-colors hover:from-blue-600 hover:to-purple-700"
             >
               Home
             </button>
           ) : (
             <button
-              onClick={() => navigate("/dashboard")}
-              className="text-white px-4 py-2 rounded-lg bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 transition-colors"
+              onClick={() => navigate("/login")}
+              className="px-4 py-2 text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg transition-colors hover:from-blue-600 hover:to-purple-700"
             >
               Get Started
             </button>
