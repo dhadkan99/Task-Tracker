@@ -1,9 +1,11 @@
 require("dotenv").config();
-const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 const mongoose = require("mongoose");
+const passport = require("passport");
+const GoogleStrategy = require("passport-google-oauth20").Strategy;
+const express = require("express");
 
 // Import models
 const User = require("./models/User");
@@ -44,6 +46,106 @@ const authenticateJWT = (req, res, next) => {
   } catch (error) {
     return res.status(403).json({ message: "Invalid or expired token" });
   }
+};
+// Configure Google Strategy
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    },
+    (accessToken, refreshToken, profile, done) => {
+      let user = users.find((u) => u.email === profile.emails[0].value);
+      if (!user) {
+        user = {
+          id: String(users.length + 1),
+          email: profile.emails[0].value,
+          password: bcrypt.hashSync("google-auth", 10), // Placeholder password
+          role: "user",
+        };
+        users.push(user);
+      }
+      return done(null, user);
+    }
+  )
+);
+// Google login
+app.get(
+  "/api/auth/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+// Configure Google Strategy
+
+// Google callback
+app.get(
+  "/api/auth/google/callback",
+  passport.authenticate("google", { session: false }),
+  (req, res) => {
+    const user = req.user;
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
+      expiresIn: "15m",
+    });
+    res.redirect(`http://localhost:3000/?token=${token}`);
+  }
+);
+app.get(
+  "/api/auth/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+app.get(
+  "/api/auth/google/callback",
+  passport.authenticate("google", { session: false }),
+  (req, res) => {
+    const user = req.user;
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
+      expiresIn: "15m",
+    });
+    res.redirect(`http://localhost:3000/?token=${token}`);
+  }
+);
+
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.GOOGLE_CALLBACK_URL,
+    },
+
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        let user = await User.findOne({ email: profile.emails[0].value });
+
+        if (!user) {
+          user = new User({
+            email: profile.emails[0].value,
+            password: bcrypt.hashSync("google-auth", 10),
+            googleId: profile.id,
+          });
+          await user.save();
+        }
+        return done(null, user);
+      } catch (err) {
+        return done(err, null);
+      }
+    }
+  )
+);
+
+(accessToken, refreshToken, profile, done) => {
+  let user = users.find((u) => u.email === profile.emails[0].value);
+  if (!user) {
+    user = {
+      id: String(users.length + 1),
+      email: profile.emails[0].value,
+      password: bcrypt.hashSync("google-auth", 10),
+      role: "user",
+    };
+    users.push(user);
+  }
+  return done(null, user);
 };
 
 // Routes
