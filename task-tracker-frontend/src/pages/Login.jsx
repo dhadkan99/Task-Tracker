@@ -1,16 +1,10 @@
 import React, { useState } from "react";
-
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-
-// import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
-
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
 // import { toast } from "react-toastify";
 
-const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
-
-// const clientId = process.env.GOOGLE_CLIENT_ID;
+const clientId = process.env.GOOGLE_CLIENT_ID;
 
 function Login() {
   const [isRegister, setIsRegister] = useState(false);
@@ -20,36 +14,13 @@ function Login() {
   const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
 
-  const handleGoogleSuccess = async (credentialResponse) => {
-    try {
-      const response = await fetch("http://localhost:5000/api/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ credential: credentialResponse.credential }),
-      });
-      const data = await response.json();
-      if (response.ok && data.token) {
-        localStorage.setItem("token", data.token);
-        navigate("/dashboard");
-      } else {
-        setErrorMsg(data.message || "Google login failed");
-      }
-    } catch (err) {
-      setErrorMsg("Network error. Please try again.");
-    }
+  const handleGoogleSuccess = (credentialResponse) => {
+    console.log("Google login success:", credentialResponse);
   };
 
   const handleGoogleFailure = () => {
-    setErrorMsg("Google login failed");
+    console.log("Google login failed");
   };
-
-  // const handleGoogleSuccess = (credentialResponse) => {
-  //   console.log("Google login success:", credentialResponse);
-  // };
-
-  // const handleGoogleFailure = () => {
-  //   console.log("Google login failed");
-  // };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -196,6 +167,7 @@ function Login() {
             </div>
 
             {/* Google Sign-In Button */}
+
             <div className="flex justify-center">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}
