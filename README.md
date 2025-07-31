@@ -2,6 +2,9 @@
 
 A full-stack task management application built with React, Node.js, and MongoDB. Features user authentication, task management, progress tracking, and analytics dashboard.
 
+## 🔗 Live Demo
+
+👉 [View Live App](https://task-tracker-chi-woad.vercel.app/)
 ## Features
 
 - User authentication with JWT and Google OAuth
