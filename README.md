@@ -18,15 +18,6 @@ A full-stack task management application built with React, Node.js, and MongoDB.
 
 ## Quick Start
 
-### Backend Setup
-
-```bash
-cd task-tracker-backend
-npm install
-```
-
-Start server:
-
 ```bash
 npm start
 ```
