@@ -35,29 +35,46 @@ function Tasklist({ tasks, onDelete, onToggleComplete, onUpdateTask }) {
                 >
                   {task.task}
                 </span>
-                {task.dueDate && (
+                {task.startDate && task.endDate && (
                   <span className="ml-4 text-xs text-gray-500">
-                    {new Date(task.dueDate).toLocaleDateString()}
+                    {new Date(task.startDate).toLocaleDateString()} -{" "}
+                    {new Date(task.endDate).toLocaleDateString()}
                   </span>
                 )}
               </div>
               <div className="flex gap-4 justify-end ml-10">
-                <button
-                  type="button"
-                  onClick={() => onUpdateTask(task.id, task.task, task.dueDate)}
-                  className="text-green-500 hover:text-green-700"
-                  title="Edit task"
-                >
-                  Edit
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDelete(task.id)}
-                  className="text-red-500 hover:text-red-700"
-                  title="Delete task"
-                >
-                  Delete
-                </button>
+                {!task.completed && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onUpdateTask(
+                        task.id,
+                        task.task,
+                        task.startDate,
+                        task.endDate
+                      )
+                    }
+                    className="text-green-500 hover:text-green-700"
+                    title="Edit task"
+                  >
+                    Edit
+                  </button>
+                )}
+                {/* {!task.completed && (
+                  <button
+                    type="button"
+                    onClick={() => onDelete(task.id)}
+                    className="text-red-500 hover:text-red-700"
+                    title="Delete task"
+                  >
+                    Delete
+                  </button>
+                )} */}
+                {task.completed && (
+                  <span className="text-sm font-medium text-green-600">
+                    Completed - Removing soon...
+                  </span>
+                )}
               </div>
             </li>
           ))}

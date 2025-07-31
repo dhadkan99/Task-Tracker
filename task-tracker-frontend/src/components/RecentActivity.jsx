@@ -22,11 +22,11 @@ export default function RecentActivity() {
     getTasks();
   }, []);
 
-  // Sort by creation date descending and take the 5 most recent
+  // Sort by start date descending and take the 5 most recent
   const recentTasks = Array.isArray(tasks)
     ? tasks
         .slice()
-        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .sort((a, b) => new Date(b.startDate) - new Date(a.startDate))
         .slice(0, 5)
     : [];
 
@@ -49,7 +49,7 @@ export default function RecentActivity() {
             >
               <span className="text-gray-900">{task.task}</span>
               <span className="text-xs text-gray-500">
-                {new Date(task.createdAt).toLocaleDateString()}
+                {new Date(task.startDate).toLocaleDateString()}
               </span>
             </li>
           ))}

@@ -1,10 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { GoogleOAuthProvider, GoogleLogin } from "@react-oauth/google";
 import Footer from "../components/Footer";
 import { useNavigate } from "react-router-dom";
 // import { toast } from "react-toastify";
 
-const clientId = process.env.GOOGLE_CLIENT_ID;
+const clientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
 function Login() {
   const [isRegister, setIsRegister] = useState(false);
@@ -13,6 +13,31 @@ function Login() {
   const [username, setUsername] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
   const navigate = useNavigate();
+
+  // Check if user is already authenticated
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      // Verify token is still valid
+      fetch("http://localhost:5000/api/tasks", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+        .then((response) => {
+          if (response.ok) {
+            navigate("/dashboard");
+          } else {
+            // Token is invalid, remove it
+            localStorage.removeItem("token");
+          }
+        })
+        .catch(() => {
+          // Network error, remove token to be safe
+          localStorage.removeItem("token");
+        });
+    }
+  }, [navigate]);
 
   const handleGoogleSuccess = (credentialResponse) => {
     console.log("Google login success:", credentialResponse);

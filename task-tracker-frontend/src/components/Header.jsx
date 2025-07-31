@@ -7,6 +7,11 @@ function Header() {
 
   const isDashboard = location.pathname === "/dashboard";
 
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/");
+  };
+
   return (
     <header className="fixed top-0 left-0 z-50 w-full border-b border-gray-300 border-solid shadow-sm backdrop-blur-md bg-white/30">
       <div className="flex justify-between items-center px-6 py-3">
@@ -39,7 +44,7 @@ function Header() {
         <div>
           {isDashboard ? (
             <button
-              onClick={() => navigate("/")}
+              onClick={handleLogout}
               className="px-4 py-2 text-white bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg transition-colors hover:from-blue-600 hover:to-purple-700"
             >
               Logout
