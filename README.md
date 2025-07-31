@@ -89,16 +89,37 @@ npm start
 ```
 Task-Tracker/
 ├── task-tracker-backend/
-│   ├── models/          # MongoDB schemas
-│   ├── server.js        # Express server
-│   └── package.json
+│   ├── models/
+│   │   ├── Task.js
+│   │   └── User.js
+│   ├── server.js
+│   ├── package.json
+│   └── .env
 ├── task-tracker-frontend/
 │   ├── src/
-│   │   ├── components/  # React components
-│   │   ├── pages/       # Page components
-│   │   ├── api/         # API utilities
-│   │   └── utils/       # Helper functions
-│   └── package.json
+│   │   ├── components/
+│   │   │   ├── Button.jsx
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── Header.jsx
+│   │   │   ├── Landingpage.jsx
+│   │   │   ├── ProtectedRoute.jsx
+│   │   │   ├── RecentActivity.jsx
+│   │   │   ├── SummaryCards.jsx
+│   │   │   ├── Tasklist.jsx
+│   │   │   ├── Tasks.jsx
+│   │   │   ├── UpcomingTasks.jsx
+│   │   │   └── WeeklyProgressChart.jsx
+│   │   ├── pages/
+│   │   │   ├── Dashboard.jsx
+│   │   │   └── Login.jsx
+│   │   ├── api/
+│   │   │   └── task.js
+│   │   ├── utils/
+│   │   │   └── taskUtils.js
+│   │   ├── App.js
+│   │   └── index.js
+│   ├── package.json
+│   └── .env
 └── README.md
 ```
 
