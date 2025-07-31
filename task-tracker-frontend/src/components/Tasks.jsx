@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
 import Tasklist from "../components/Tasklist";
 import Button from "../components/Button";
 import { fetchTasks, addTask, updateTask, deleteTask } from "../api/task";
@@ -7,13 +8,22 @@ import { fetchTasks, addTask, updateTask, deleteTask } from "../api/task";
 function Tasks() {
   const [tasks, setTask] = useState([]);
   const [newTask, setNewTask] = useState("");
-  const [newDueDate, setNewDueDate] = useState("");
+  const [newStartDate, setNewStartDate] = useState("");
+  const [newEndDate, setNewEndDate] = useState("");
   const [editId, setEditId] = useState(null);
   const [editTask, setEditTask] = useState("");
-  const [editDueDate, setEditDueDate] = useState("");
+  const [editStartDate, setEditStartDate] = useState("");
+  const [editEndDate, setEditEndDate] = useState("");
   const [welcomeMessage, setWelcomeMessage] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const navigate = useNavigate();
+
+  const handleAuthError = useCallback(() => {
+    localStorage.removeItem("token");
+    toast.error("Session expired. Please login again.");
+    navigate("/login");
+  }, [navigate]);
 
   useEffect(() => {
     const initializeApp = async () => {
@@ -28,13 +38,17 @@ function Tasks() {
         const timer = setTimeout(() => setWelcomeMessage(""), 3000);
         return () => clearTimeout(timer);
       } catch (err) {
+        if (err.message && err.message.includes("403")) {
+          handleAuthError();
+          return;
+        }
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
     initializeApp();
-  }, []);
+  }, [navigate, handleAuthError]);
 
   useEffect(() => {
     localStorage.setItem("tasks", JSON.stringify(tasks));
@@ -42,10 +56,20 @@ function Tasks() {
 
   const handleAddTask = async () => {
     if (newTask.trim()) {
-      const created = await addTask(newTask, newDueDate);
+      if (!newStartDate || !newEndDate) {
+        toast.error("Please select both start and end dates");
+        return;
+      }
+
+      const created = await addTask(newTask, newStartDate, newEndDate);
+      if (created.message) {
+        toast.error(created.message);
+        return;
+      }
       setTask([...tasks, created]);
       setNewTask("");
-      setNewDueDate("");
+      setNewStartDate("");
+      setNewEndDate("");
       toast.success("Task added");
     } else {
       toast.error("Task can't be empty");
@@ -56,11 +80,6 @@ function Tasks() {
     const taskToDelete = tasks.find((task) => task.id === id);
     if (!taskToDelete) return;
 
-    if (!taskToDelete.completed) {
-      toast.warn("Only completed tasks can be deleted");
-      return;
-    }
-
     await deleteTask(id);
     setTask(tasks.filter((task) => task.id !== id));
     toast.success("Task deleted");
@@ -69,26 +88,77 @@ function Tasks() {
   const onToggleComplete = async (id) => {
     const task = tasks.find((t) => t.id === id);
     if (!task) return;
-    const updated = await updateTask(id, { completed: !task.completed });
-    setTask(tasks.map((t) => (t.id === id ? updated : t)));
+
+    if (!task.completed) {
+      // Mark task as completed
+      const updated = await updateTask(id, { completed: true });
+      setTask(tasks.map((t) => (t.id === id ? updated : t)));
+      toast.success("Task completed!");
+
+      // Automatically delete the completed task after a short delay
+      setTimeout(async () => {
+        try {
+          await deleteTask(id);
+          setTask(tasks.filter((t) => t.id !== id));
+          toast.success("Completed task removed");
+        } catch (error) {
+          console.error("Error deleting completed task:", error);
+        }
+      }, 2000); // Delete after 2 seconds
+    } else {
+      // Unmark task as completed (if needed)
+      const updated = await updateTask(id, { completed: false });
+      setTask(tasks.map((t) => (t.id === id ? updated : t)));
+    }
   };
 
-  const onUpdateTask = (id, task, dueDate) => {
+  const onUpdateTask = (id, task, startDate, endDate) => {
     setEditId(id);
     setEditTask(task);
-    setEditDueDate(dueDate || "");
+    setEditStartDate(startDate || "");
+    setEditEndDate(endDate || "");
   };
 
   const handleEditSave = async () => {
+    if (!editStartDate || !editEndDate) {
+      toast.error("Please select both start and end dates");
+      return;
+    }
+
     const updated = await updateTask(editId, {
       task: editTask,
-      dueDate: editDueDate,
+      startDate: editStartDate,
+      endDate: editEndDate,
     });
+
+    if (updated.message) {
+      toast.error(updated.message);
+      return;
+    }
+
     setTask(tasks.map((t) => (t.id === editId ? updated : t)));
     setEditId(null);
     setEditTask("");
-    setEditDueDate("");
+    setEditStartDate("");
+    setEditEndDate("");
     toast.success("Task updated");
+  };
+
+  // Update end date minimum when start date changes
+  const handleStartDateChange = (e) => {
+    setNewStartDate(e.target.value);
+    // If end date is before new start date, clear it
+    if (newEndDate && e.target.value > newEndDate) {
+      setNewEndDate("");
+    }
+  };
+
+  const handleEditStartDateChange = (e) => {
+    setEditStartDate(e.target.value);
+    // If end date is before new start date, clear it
+    if (editEndDate && e.target.value > editEndDate) {
+      setEditEndDate("");
+    }
   };
 
   if (loading) {
@@ -122,12 +192,32 @@ function Tasks() {
           className="flex-grow px-4 py-2 rounded-md border border-gray-300 border-solid shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           placeholder="Enter new task..."
         />
-        <input
-          type="date"
-          value={newDueDate}
-          onChange={(e) => setNewDueDate(e.target.value)}
-          className="px-2 py-2 rounded-md border border-gray-300 border-solid shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-        />
+        <div className="flex gap-2">
+          <div className="flex flex-col">
+            <label className="block mb-1 text-xs text-center text-gray-600">
+              Start Date
+            </label>
+            <input
+              type="date"
+              value={newStartDate}
+              onChange={handleStartDateChange}
+              min={new Date().toISOString().split("T")[0]}
+              className="px-2 py-2 rounded-md border border-gray-300 border-solid shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div className="flex flex-col">
+            <label className="block mb-1 text-xs text-center text-gray-600">
+              End Date
+            </label>
+            <input
+              type="date"
+              value={newEndDate}
+              onChange={(e) => setNewEndDate(e.target.value)}
+              min={newStartDate || new Date().toISOString().split("T")[0]}
+              className="px-2 py-2 rounded-md border border-gray-300 border-solid shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
         <Button
           onClick={handleAddTask}
           className="px-4 py-2 font-medium text-white bg-purple-600 rounded-lg hover:bg-purple-700"
@@ -145,12 +235,32 @@ function Tasks() {
             className="flex-grow px-4 py-2 rounded-md border border-gray-300 border-solid shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             placeholder="Edit task..."
           />
-          <input
-            type="date"
-            value={editDueDate}
-            onChange={(e) => setEditDueDate(e.target.value)}
-            className="px-2 py-2 rounded-md border border-gray-300 border-solid shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <div className="flex gap-2">
+            <div className="flex flex-col">
+              <label className="block mb-1 text-xs text-center text-gray-600">
+                Start Date
+              </label>
+              <input
+                type="date"
+                value={editStartDate}
+                onChange={handleEditStartDateChange}
+                min={new Date().toISOString().split("T")[0]}
+                className="px-2 py-2 rounded-md border border-gray-300 border-solid shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <div className="flex flex-col">
+              <label className="block mb-1 text-xs text-center text-gray-600">
+                End Date
+              </label>
+              <input
+                type="date"
+                value={editEndDate}
+                onChange={(e) => setEditEndDate(e.target.value)}
+                min={editStartDate || new Date().toISOString().split("T")[0]}
+                className="px-2 py-2 rounded-md border border-gray-300 border-solid shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
           <Button
             onClick={handleEditSave}
             className="px-4 py-2 font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"

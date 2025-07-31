@@ -55,65 +55,6 @@ passport.use(
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
       callbackURL: process.env.GOOGLE_CALLBACK_URL,
     },
-    (accessToken, refreshToken, profile, done) => {
-      let user = users.find((u) => u.email === profile.emails[0].value);
-      if (!user) {
-        user = {
-          id: String(users.length + 1),
-          email: profile.emails[0].value,
-          password: bcrypt.hashSync("google-auth", 10), // Placeholder password
-          role: "user",
-        };
-        users.push(user);
-      }
-      return done(null, user);
-    }
-  )
-);
-// Google login
-app.get(
-  "/api/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
-);
-
-// Configure Google Strategy
-
-// Google callback
-app.get(
-  "/api/auth/google/callback",
-  passport.authenticate("google", { session: false }),
-  (req, res) => {
-    const user = req.user;
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
-      expiresIn: "15m",
-    });
-    res.redirect(`http://localhost:3000/?token=${token}`);
-  }
-);
-app.get(
-  "/api/auth/google",
-  passport.authenticate("google", { scope: ["profile", "email"] })
-);
-app.get(
-  "/api/auth/google/callback",
-  passport.authenticate("google", { session: false }),
-  (req, res) => {
-    const user = req.user;
-    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
-      expiresIn: "15m",
-    });
-    res.redirect(`http://localhost:3000/?token=${token}`);
-  }
-);
-
-passport.use(
-  new GoogleStrategy(
-    {
-      clientID: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      callbackURL: process.env.GOOGLE_CALLBACK_URL,
-    },
-
     async (accessToken, refreshToken, profile, done) => {
       try {
         let user = await User.findOne({ email: profile.emails[0].value });
@@ -122,7 +63,7 @@ passport.use(
           user = new User({
             email: profile.emails[0].value,
             password: bcrypt.hashSync("google-auth", 10),
-            googleId: profile.id,
+            googleID: profile.id,
           });
           await user.save();
         }
@@ -134,19 +75,24 @@ passport.use(
   )
 );
 
-(accessToken, refreshToken, profile, done) => {
-  let user = users.find((u) => u.email === profile.emails[0].value);
-  if (!user) {
-    user = {
-      id: String(users.length + 1),
-      email: profile.emails[0].value,
-      password: bcrypt.hashSync("google-auth", 10),
-      role: "user",
-    };
-    users.push(user);
+// Google login
+app.get(
+  "/api/auth/google",
+  passport.authenticate("google", { scope: ["profile", "email"] })
+);
+
+// Google callback
+app.get(
+  "/api/auth/google/callback",
+  passport.authenticate("google", { session: false }),
+  (req, res) => {
+    const user = req.user;
+    const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
+      expiresIn: "15m",
+    });
+    res.redirect(`http://localhost:3000/?token=${token}`);
   }
-  return done(null, user);
-};
+);
 
 // Routes
 app.get("/health", (req, res) => {
@@ -161,7 +107,8 @@ app.get("/api/tasks", authenticateJWT, async (req, res) => {
       tasks.map((task) => ({
         id: task.id,
         task: task.text,
-        dueDate: task.date,
+        startDate: task.startDate,
+        endDate: task.endDate,
         completed: task.completed,
       }))
     );
@@ -173,21 +120,51 @@ app.get("/api/tasks", authenticateJWT, async (req, res) => {
 app.post("/api/tasks", authenticateJWT, async (req, res) => {
   try {
     const taskText = req.body.task;
-    const dueDate = req.body.dueDate || req.body.date;
+    const startDate = req.body.startDate;
+    const endDate = req.body.endDate;
+
     if (!taskText) {
       return res.status(400).json({ message: "Task is required" });
     }
+
+    if (!startDate || !endDate) {
+      return res
+        .status(400)
+        .json({ message: "Start date and end date are required" });
+    }
+
+    // Validate that start date is not in the past
+    const startDateTime = new Date(startDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Set to start of today
+
+    if (startDateTime < today) {
+      return res
+        .status(400)
+        .json({ message: "Start date cannot be in the past" });
+    }
+
+    // Validate that end date is not before start date
+    const endDateTime = new Date(endDate);
+    if (endDateTime < startDateTime) {
+      return res
+        .status(400)
+        .json({ message: "End date cannot be before start date" });
+    }
+
     const newTask = new Task({
       text: taskText,
       user: req.user.id,
-      date: dueDate || Date.now(),
+      startDate: startDateTime,
+      endDate: endDateTime,
       completed: false,
     });
     await newTask.save();
     res.status(201).json({
       id: newTask.id,
       task: newTask.text,
-      dueDate: newTask.date,
+      startDate: newTask.startDate,
+      endDate: newTask.endDate,
       completed: newTask.completed,
     });
   } catch (err) {
@@ -202,10 +179,38 @@ app.put("/api/tasks/:id", authenticateJWT, async (req, res) => {
     if (typeof req.body.completed !== "undefined")
       updateFields.completed = req.body.completed;
     if (typeof req.body.task !== "undefined") updateFields.text = req.body.task;
-    if (typeof req.body.dueDate !== "undefined")
-      updateFields.date = req.body.dueDate;
+
+    // Handle start date updates
+    if (typeof req.body.startDate !== "undefined") {
+      const startDateTime = new Date(req.body.startDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (startDateTime < today) {
+        return res
+          .status(400)
+          .json({ message: "Start date cannot be in the past" });
+      }
+      updateFields.startDate = startDateTime;
+    }
+
+    // Handle end date updates
+    if (typeof req.body.endDate !== "undefined") {
+      const endDateTime = new Date(req.body.endDate);
+      const startDate = req.body.startDate
+        ? new Date(req.body.startDate)
+        : null;
+
+      if (startDate && endDateTime < startDate) {
+        return res
+          .status(400)
+          .json({ message: "End date cannot be before start date" });
+      }
+      updateFields.endDate = endDateTime;
+    }
+
     const task = await Task.findOneAndUpdate(
-      { id: req.params.id, user: req.user.id },
+      { id: parseInt(req.params.id), user: req.user.id },
       updateFields,
       { new: true }
     );
@@ -215,11 +220,28 @@ app.put("/api/tasks/:id", authenticateJWT, async (req, res) => {
     res.json({
       id: task.id,
       task: task.text,
-      dueDate: task.date,
+      startDate: task.startDate,
+      endDate: task.endDate,
       completed: task.completed,
     });
   } catch (err) {
     res.status(500).json({ message: "Error updating task" });
+  }
+});
+
+// Delete a task
+app.delete("/api/tasks/:id", authenticateJWT, async (req, res) => {
+  try {
+    const task = await Task.findOneAndDelete({
+      id: parseInt(req.params.id),
+      user: req.user.id,
+    });
+    if (!task) {
+      return res.status(404).json({ message: "Task not found" });
+    }
+    res.json({ message: "Task deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ message: "Error deleting task" });
   }
 });
 

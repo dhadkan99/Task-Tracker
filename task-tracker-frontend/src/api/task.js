@@ -10,19 +10,29 @@ export const fetchTasks = async () => {
   const response = await fetch(API_URL, {
     headers: { ...getAuthHeaders() },
   });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
   return await response.json();
 };
 
 // Add a new task
-export const addTask = async (task, dueDate) => {
+export const addTask = async (task, startDate, endDate) => {
   const response = await fetch(API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...getAuthHeaders(),
     },
-    body: JSON.stringify({ task, dueDate }),
+    body: JSON.stringify({ task, startDate, endDate }),
   });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
   return await response.json();
 };
 
@@ -36,6 +46,11 @@ export const updateTask = async (id, updates) => {
     },
     body: JSON.stringify(updates),
   });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
   return await response.json();
 };
 
@@ -45,5 +60,10 @@ export const deleteTask = async (id) => {
     method: "DELETE",
     headers: { ...getAuthHeaders() },
   });
+
+  if (!response.ok) {
+    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+  }
+
   return await response.json();
 };
