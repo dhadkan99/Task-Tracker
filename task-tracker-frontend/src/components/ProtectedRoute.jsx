@@ -15,11 +15,14 @@ const ProtectedRoute = ({ children }) => {
 
       // Verify token by making a test request
       try {
-        const response = await fetch("http://localhost:5000/api/tasks", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        const response = await fetch(
+          "https://task-tracker-backend-ih9d.onrender.com/api/tasks",
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
 
         if (response.status === 200) {
           setIsAuthenticated(true);

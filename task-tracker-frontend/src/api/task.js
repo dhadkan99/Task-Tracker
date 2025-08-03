@@ -1,4 +1,4 @@
-const API_URL = "http://localhost:5000/api/tasks";
+const API_URL = "https://task-tracker-backend-ih9d.onrender.com/api/tasks";
 
 const getAuthHeaders = () => {
   const token = localStorage.getItem("token");
